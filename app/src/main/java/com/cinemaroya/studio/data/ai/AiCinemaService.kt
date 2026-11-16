@@ -165,7 +165,7 @@ class AiCinemaService {
 
         val jsonText = try {
             onStatusUpdate?.invoke("جاري بناء السيناريو والمشاهد عبر Gemini 3.8 Flash...")
-            withTimeout(45_000L) {
+            withTimeout(90_000L) {
                 collectStreamText(storyboardModel, requestContent) { charsCount ->
                     onStatusUpdate?.invoke("جاري صياغة المشاهد السينمائية مباشرة ($charsCount حرف)...")
                 }
@@ -174,7 +174,7 @@ class AiCinemaService {
             currentCoroutineContext().ensureActive()
             Log.w(TAG, "Primary gemini-3.8-flash storyboard timed out, falling back to gemini-3.5-flash-lite", e)
             onStatusUpdate?.invoke("تم تحويل الطلب لنموذج Gemini 3.5 Flash-Lite فائق السرعة...")
-            withTimeout(45_000L) {
+            withTimeout(90_000L) {
                 collectStreamText(fastStoryboardModel, requestContent) { charsCount ->
                     onStatusUpdate?.invoke("جاري استكمال المشاهد بسرعة عالية ($charsCount حرف)...")
                 }
@@ -304,14 +304,24 @@ class AiCinemaService {
         onCharProgress: ((Int) -> Unit)? = null
     ): String {
         val builder = StringBuilder()
-        model.generateContentStream(inputContent).collect { chunk ->
-            val chunkText = chunk.text
-            if (!chunkText.isNullOrEmpty()) {
-                builder.append(chunkText)
-                onCharProgress?.invoke(builder.length)
+        try {
+            model.generateContentStream(inputContent).collect { chunk ->
+                val chunkText = chunk.text
+                if (!chunkText.isNullOrEmpty()) {
+                    builder.append(chunkText)
+                    onCharProgress?.invoke(builder.length)
+                }
             }
+            return builder.toString()
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // The stream can be cut mid-response on unstable mobile networks, which surfaces as
+            // "Expected end of the object '}', but had 'EOF'". Retry once without streaming.
+            Log.w(TAG, "Streaming failed after ${builder.length} chars; retrying without streaming", e)
+            onCharProgress?.invoke(0)
+            return model.generateContent(inputContent).text.orEmpty()
         }
-        return builder.toString()
     }
 
     private fun downscaleBitmap(bitmap: Bitmap, maxDimensionPx: Int): Bitmap {
