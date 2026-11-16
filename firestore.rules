@@ -1,0 +1,196 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 1: Global Default-Deny Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprint: VideoProject
+    function isValidVideoProject(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.synopsis is string && data.synopsis.size() <= 2000 &&
+             data.genre is string && data.genre.size() >= 1 && data.genre.size() <= 60 &&
+             data.aspectRatio is string && data.aspectRatio in ['16:9', '9:16', '21:9', '1:1'] &&
+             data.visualStyle is string && data.visualStyle.size() >= 1 && data.visualStyle.size() <= 80 &&
+             data.targetDurationSeconds is int && data.targetDurationSeconds >= 5 && data.targetDurationSeconds <= 3600 &&
+             data.sceneCount is int && data.sceneCount >= 0 && data.sceneCount <= 100 &&
+             data.globalLightingPreset is string && data.globalLightingPreset.size() >= 1 && data.globalLightingPreset.size() <= 80 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation Blueprint: VideoScene
+    function isValidVideoScene(data, userId, projectId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.projectId is string && data.projectId == projectId &&
+             data.sceneIndex is int && data.sceneIndex >= 0 && data.sceneIndex <= 100 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.narrationAr is string && data.narrationAr.size() <= 2000 &&
+             data.visualPrompt is string && data.visualPrompt.size() >= 1 && data.visualPrompt.size() <= 2000 &&
+             data.durationSeconds is int && data.durationSeconds >= 3 && data.durationSeconds <= 60 &&
+             data.cameraMovement is string && data.cameraMovement in ['STATIC', 'PAN_LEFT', 'PAN_RIGHT', 'ZOOM_IN', 'ZOOM_OUT', 'DOLLY_FORWARD', 'ORBIT_3D'] &&
+             data.transitionType is string && data.transitionType in ['CROSSFADE', 'CUT', 'DIP_TO_BLACK', 'LIGHT_FLASH', 'SLIDE_RTL'] &&
+             data.lightingKeyIntensity is int && data.lightingKeyIntensity >= 0 && data.lightingKeyIntensity <= 100 &&
+             data.lightingFillIntensity is int && data.lightingFillIntensity >= 0 && data.lightingFillIntensity <= 100 &&
+             data.lightingRimIntensity is int && data.lightingRimIntensity >= 0 && data.lightingRimIntensity <= 100 &&
+             data.colorTempKelvin is int && data.colorTempKelvin >= 2000 && data.colorTempKelvin <= 10000 &&
+             data.lightAngleDeg is int && data.lightAngleDeg >= 0 && data.lightAngleDeg <= 360 &&
+             data.lightElevationDeg is int && data.lightElevationDeg >= 0 && data.lightElevationDeg <= 90 &&
+             data.atmosphereFog is int && data.atmosphereFog >= 0 && data.atmosphereFog <= 100 &&
+             data.colorGradePreset is string && data.colorGradePreset.size() >= 1 && data.colorGradePreset.size() <= 60 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // Validation Blueprint: GeneratedVideo
+    function isValidGeneratedVideo(data, userId) {
+      return data.userId is string && data.userId == userId && data.userId == request.auth.uid &&
+             data.projectId is string && data.projectId.size() >= 1 && data.projectId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 120 &&
+             data.genre is string && data.genre.size() >= 1 && data.genre.size() <= 60 &&
+             data.aspectRatio is string && data.aspectRatio in ['16:9', '9:16', '21:9', '1:1'] &&
+             data.durationSeconds is int && data.durationSeconds >= 3 && data.durationSeconds <= 3600 &&
+             data.sceneCount is int && data.sceneCount >= 1 && data.sceneCount <= 100 &&
+             data.colorGradePreset is string && data.colorGradePreset.size() >= 1 && data.colorGradePreset.size() <= 80 &&
+             data.thumbnailBase64 is string && data.thumbnailBase64.size() <= 120000 &&
+             data.localFilePath is string && data.localFilePath.size() <= 500 &&
+             (!('videoUrl' in data.keys()) || (data.videoUrl is string && data.videoUrl.size() <= 1000)) &&
+             (!('mediaMimeType' in data.keys()) || (data.mediaMimeType is string && data.mediaMimeType.size() <= 100)) &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    match /users/{userId}/projects/{projectId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(projectId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'synopsis', 'genre', 'aspectRatio',
+                         'visualStyle', 'targetDurationSeconds', 'sceneCount',
+                         'globalLightingPreset', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'synopsis', 'genre', 'aspectRatio',
+                         'visualStyle', 'targetDurationSeconds', 'sceneCount',
+                         'globalLightingPreset', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidVideoProject(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(projectId) &&
+                       isValidVideoProject(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'synopsis', 'genre', 'aspectRatio',
+                         'visualStyle', 'targetDurationSeconds', 'sceneCount',
+                         'globalLightingPreset', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(projectId);
+
+      match /scenes/{sceneId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(projectId) && isValidId(sceneId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(sceneId) &&
+                         incoming().keys().hasAll([
+                           'userId', 'projectId', 'sceneIndex', 'title', 'narrationAr',
+                           'visualPrompt', 'durationSeconds', 'cameraMovement', 'transitionType',
+                           'lightingKeyIntensity', 'lightingFillIntensity', 'lightingRimIntensity',
+                           'colorTempKelvin', 'lightAngleDeg', 'lightElevationDeg',
+                           'atmosphereFog', 'colorGradePreset', 'createdAt', 'updatedAt'
+                         ]) &&
+                         incoming().keys().hasOnly([
+                           'userId', 'projectId', 'sceneIndex', 'title', 'narrationAr',
+                           'visualPrompt', 'durationSeconds', 'cameraMovement', 'transitionType',
+                           'lightingKeyIntensity', 'lightingFillIntensity', 'lightingRimIntensity',
+                           'colorTempKelvin', 'lightAngleDeg', 'lightElevationDeg',
+                           'atmosphereFog', 'colorGradePreset', 'createdAt', 'updatedAt'
+                         ]) &&
+                         isValidVideoScene(incoming(), userId, projectId);
+
+        allow update: if isOwner(userId) &&
+                         isValidId(userId) &&
+                         isValidId(projectId) &&
+                         isValidId(sceneId) &&
+                         isValidVideoScene(incoming(), userId, projectId) &&
+                         incoming().userId == existing().userId &&
+                         incoming().projectId == existing().projectId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly([
+                           'sceneIndex', 'title', 'narrationAr', 'visualPrompt',
+                           'durationSeconds', 'cameraMovement', 'transitionType',
+                           'lightingKeyIntensity', 'lightingFillIntensity', 'lightingRimIntensity',
+                           'colorTempKelvin', 'lightAngleDeg', 'lightElevationDeg',
+                           'atmosphereFog', 'colorGradePreset', 'updatedAt'
+                         ]);
+
+        allow delete: if isOwner(userId) && isValidId(userId) && isValidId(projectId) && isValidId(sceneId);
+      }
+    }
+
+    match /users/{userId}/generated_videos/{videoId} {
+      allow get: if isOwner(userId) && isValidId(userId) && isValidId(videoId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(videoId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'projectId', 'title', 'genre', 'aspectRatio',
+                         'durationSeconds', 'sceneCount', 'colorGradePreset',
+                         'thumbnailBase64', 'localFilePath', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'projectId', 'title', 'genre', 'aspectRatio',
+                         'durationSeconds', 'sceneCount', 'colorGradePreset',
+                         'thumbnailBase64', 'localFilePath', 'videoUrl', 'mediaMimeType',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidGeneratedVideo(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(userId) &&
+                       isValidId(videoId) &&
+                       isValidGeneratedVideo(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'thumbnailBase64', 'localFilePath', 'videoUrl', 'mediaMimeType', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(userId) && isValidId(videoId);
+    }
+  }
+}

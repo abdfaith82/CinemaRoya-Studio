@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<resources>
+    <string name="firestore_database_id" translatable="false">ai-studio-android-cineroya-304279f1-59f8-4173-8179-82b01f3a1c93</string>
+    <string name="recaptcha_site_key" translatable="false">6LcO3h0uAAAAAIN1GbF7F75vOja7rnfN9zcQDlmw</string>
+</resources>

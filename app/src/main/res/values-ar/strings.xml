@@ -1,0 +1,111 @@
+<resources>
+    <string name="app_name">CinemaRoya Studio</string>
+    <string name="studio_title">استوديو سيني رؤيا AI</string>
+    <string name="studio_subtitle">محرك توليد الفيديوهات الطويلة والإضاءة السينمائية الواقعية</string>
+    <string name="studio_badge">AI CINEMA STUDIO • 8K PBR</string>
+    <string name="hero_badge">مجاني • واقعي 8K • يدعم العربية بالكامل</string>
+    <string name="hero_headline">من النص أو الصورة إلى فيلم طويل متكامل</string>
+    <string name="hero_subheadline">قسّم قصتك إلى مشاهد متتابعة، رتب المقاطع، تحكم في زاوية الكاميرا والإضاءة، وصدّر الفيديو بصيغة MP4.</string>
+
+    <string name="auth_welcome_desc">توليد الفيديوهات الطويلة الواقعية بالذكاء الاصطناعي من النصوص والصور مع تحكم احترافي بالمشاهد وزوايا الكاميرا والإضاءة السينمائية</string>
+    <string name="auth_google_button">تسجيل الدخول عبر Google (حفظ سحابي)</string>
+    <string name="auth_guest_button">الدخول بدون حساب (وضع الزائر الفوري)</string>
+    <string name="auth_guest_hint">يمكنك استخدام كافة أدوات الذكاء الاصطناعي وتعديل المشاهد وتصدير الفيديو MP4 مجاناً بدون حساب.</string>
+    <string name="guest_mode_badge">وضع الزائر (بدون حساب)</string>
+    <string name="link_google_account">حساب Google</string>
+    <string name="sign_out">تسجيل الخروج</string>
+
+    <string name="feat_long_video_title">توليد أفلام ومشاهد طويلة مترابطة</string>
+    <string name="feat_long_video_desc">تحويل النصوص والصور إلى خط زمني متعدد المشاهد مع إعادة ترتيب المقاطع وتصدير MP4.</string>
+    <string name="feat_lighting_title">تحكم هندسي بالإضاءة الثلاثية (3-Point Lighting)</string>
+    <string name="feat_lighting_desc">رادار زاوية الضوء 360°، حرارة اللون بالكلفن (2000K-10000K)، والضباب الحجمي.</string>
+    <string name="feat_camera_title">ضبط زوايا الكاميرا والعدسات السينمائية</string>
+    <string name="feat_camera_desc">التحكم في زاوية التصوير، ميلان الكاميرا، البعد البؤري للعدسة، وحركات Dolly و Orbit 3D.</string>
+    <string name="feat_arabic_title">دعم كامل للغة العربية والتعليق الصوتي</string>
+    <string name="feat_arabic_desc">كتابة السيناريو والترجمة السينمائية والنطق الصوتي العربي التلقائي لكل مشهد.</string>
+
+    <string name="quick_templates_label">قوالب سينمائية عربية جاهزة للبدء السريع:</string>
+    <string name="new_project_card_title">إنشاء مشروع فيديو طويل جديد بالذكاء الاصطناعي</string>
+    <string name="story_prompt_label">اكتب فكرة الفيلم أو النص السينمائي بالتفصيل...</string>
+    <string name="attach_ref_image">إرفاق صورة مرجعية (اختياري)</string>
+    <string name="change_ref_image">تغيير الصورة المرجعية</string>
+    <string name="genre_label">النوع السينمائي:</string>
+    <string name="aspect_ratio_label">أبعاد الفيديو:</string>
+    <string name="scene_count_label">عدد المشاهد المتسلسلة للفيلم الطويل:</string>
+    <string name="generate_long_video_btn">توليد الفيلم الطويل والمشاهد بالذكاء الاصطناعي</string>
+    <string name="saved_projects_title_cloud">مشاريعك السينمائية المحفوظة سحابياً</string>
+    <string name="saved_projects_title_guest">مشاريعك السينمائية في وضع الزائر</string>
+    <string name="empty_projects_title">لا توجد مشاريع محفوظة بعد</string>
+    <string name="empty_projects_subtitle">اكتب فكرتك في الأعلى واضغط على زر التوليد لإنشاء أول فيلم طويل لك بالذكاء الاصطناعي.</string>
+
+    <string name="export_mp4_btn">تصدير MP4</string>
+    <string name="exporting_mp4_msg">جاري رندرة وتصدير ملف الفيديو الطويل (MP4 H.264)...</string>
+    <string name="export_success_title">تم تصدير الفيديو السينمائي بنجاح!</string>
+    <string name="share_video_btn">مشاركة</string>
+    <string name="timeline_header">الخط الزمني للمشاهد (اسحب أو استخدم الأزرار لإعادة الترتيب)</string>
+    <string name="add_scene_btn">إضافة مشهد</string>
+    <string name="move_scene_earlier">تقديم المشهد</string>
+    <string name="move_scene_later">تأخير المشهد</string>
+    <string name="duplicate_scene">تكرار المشهد</string>
+    <string name="delete_scene">حذف المشهد</string>
+
+    <string name="tab_ai_scene">توليد اللقطة والـ AI</string>
+    <string name="tab_lighting_3d">هندسة الإضاءة 3D</string>
+    <string name="tab_camera_angles">زوايا الكاميرا والحركة</string>
+    <string name="tab_arabic_script">السيناريو والصوت</string>
+
+    <string name="ai_frame_section_title">توليد اللقطة البصرية الواقعية 8K للمشهد (Nano Banana 2.1)</string>
+    <string name="visual_prompt_label">الوصف البصري والفيزيائي للمشهد (Visual Prompt)</string>
+    <string name="generate_8k_frame_btn">توليد لقطة 8K بالـ AI</string>
+    <string name="pick_device_photo_btn">صورة من جهازك</string>
+    <string name="ai_director_label">المخرج الذكي (تعديل المشهد والإضاءة والكاميرا بأمر عربي):</string>
+    <string name="ai_director_hint">مثال: اجعل المشهد بزاوية منخفضة درامية مع إضاءة ذهبية دافئة وضباب</string>
+    <string name="apply_ai_director_btn">تطبيق توجيه المخرج الذكي</string>
+    <string name="generate_prompt_seq_btn">توليد تسلسل موجهات الفيديو (Prompt Sequence)</string>
+
+    <string name="lut_presets_label">قوالب التدريج اللوني والإضاءة السينمائية (LUT Presets):</string>
+    <string name="radar_title">رادار هندسة الإضاءة المحيطية 360° (اسحب لتغيير زاوية وارتفاع الضوء)</string>
+    <string name="slider_key_light">شدة الإضاءة الرئيسية (Key Light)</string>
+    <string name="slider_fill_light">إضاءة الملء وتنعيم الظلال (Fill Light)</string>
+    <string name="slider_rim_light">الإضاءة الخلفية المحيطية (Rim Light)</string>
+    <string name="slider_kelvin">حرارة اللون الفيزيائية (Kelvin 2000K - 10000K)</string>
+    <string name="slider_fog">الضباب الحجمي والأشعة الضوئية (Volumetric Fog)</string>
+
+    <string name="camera_angle_presets_label">زاوية التصوير السينمائية (Camera Shot Angle):</string>
+    <string name="camera_pitch_slider_label">زاوية ميلان الكاميرا الرأسية (Pitch / Tilt Angle):</string>
+    <string name="camera_lens_label">البعد البؤري للعدسة السينمائية (Focal Length):</string>
+    <string name="camera_motion_label">حركة الكاميرا الديناميكية (Camera Rig Motion):</string>
+    <string name="scene_transition_label">الانتقال للمشهد التالي (Scene Transition):</string>
+    <string name="scene_duration_label">مدة عرض هذا المشهد (بالثواني):</string>
+
+    <string name="scene_title_label">عنوان المشهد</string>
+    <string name="scene_narration_label">النص العربي للسرد الصوتي والترجمة السينمائية</string>
+    <string name="tts_preview_btn">استماع للتعليق الصوتي العربي للمشهد</string>
+
+    <!-- Navigation & Projects Gallery -->
+    <string name="nav_studio_hub">الاستوديو والإنشاء</string>
+    <string name="nav_projects_gallery">معرض الفيديوهات</string>
+    <string name="projects_gallery_title">معرض الفيديوهات والمشاريع المُصدّرة</string>
+    <string name="projects_gallery_subtitle_cloud">مزامنة سحابية مباشرة من Cloud Firestore مع الصور المصغرة وتوقيت الإنشاء</string>
+    <string name="projects_gallery_subtitle_guest">الفيديوهات المُصدّرة محلياً في وضع الزائر مع الصور المصغرة وتوقيت الإنشاء</string>
+    <string name="gallery_empty_title">لا توجد فيديوهات مُصدّرة بعد</string>
+    <string name="gallery_empty_subtitle">افتح أي مشروع واضغط على زر تصدير MP4 لحفظ الفيديو النهائي وصورته المصغرة هنا.</string>
+    <string name="gallery_open_project">تعديل في الاستوديو</string>
+    <string name="gallery_share_video">مشاركة MP4</string>
+    <string name="gallery_delete_video">حذف الفيديو</string>
+    <string name="gallery_view_in_gallery">عرض في المعرض</string>
+    <string name="gallery_created_at_prefix">تاريخ الإنشاء:</string>
+
+    <!-- Export Progress Stages -->
+    <string name="exporting_stage_preparing">تهيئة المشاهد ومصفوفة الإضاءة 3D...</string>
+    <string name="exporting_stage_compiling">دمج وتصيير المقاطع السينمائية (H.264 MP4)...</string>
+    <string name="exporting_stage_muxing">معالجة الإطارات النهائية وحفظ الصورة المصغرة...</string>
+
+    <!-- Cinematic Templates Drawer -->
+    <string name="cinematic_templates_btn">القوالب السينمائية</string>
+    <string name="cinematic_templates_drawer_title">درج القوالب السينمائية الجاهزة</string>
+    <string name="cinematic_templates_drawer_subtitle">اختر قالباً يضبط الإضاءة وحرارة اللون وحركة وزاوية الكاميرا بضغطة واحدة</string>
+    <string name="apply_template_current_scene">تطبيق على المشهد</string>
+    <string name="apply_template_all_scenes">تطبيق على الكل</string>
+</resources>
+

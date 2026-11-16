@@ -1,0 +1,273 @@
+{
+  "entities": {
+    "VideoProject": {
+      "title": "VideoProject",
+      "description": "A long-form AI video production project owned by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated project owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Project title in Arabic or English."
+        },
+        "synopsis": {
+          "type": "string",
+          "description": "Full script synopsis or story prompt."
+        },
+        "genre": {
+          "type": "string",
+          "description": "Cinematic genre of the video project."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": ["16:9", "9:16", "21:9", "1:1"],
+          "description": "Video frame aspect ratio."
+        },
+        "visualStyle": {
+          "type": "string",
+          "description": "Photorealistic visual style preset."
+        },
+        "targetDurationSeconds": {
+          "type": "integer",
+          "description": "Total target duration of the long video in seconds."
+        },
+        "sceneCount": {
+          "type": "integer",
+          "description": "Number of scenes in this project."
+        },
+        "globalLightingPreset": {
+          "type": "string",
+          "description": "Default global studio lighting preset."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of project creation via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "synopsis",
+        "genre",
+        "aspectRatio",
+        "visualStyle",
+        "targetDurationSeconds",
+        "sceneCount",
+        "globalLightingPreset",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "VideoScene": {
+      "title": "VideoScene",
+      "description": "An individual scene within a long-form AI video project, including camera motion, Arabic narration, and 3-point PBR studio lighting controls.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "ID of the parent VideoProject."
+        },
+        "sceneIndex": {
+          "type": "integer",
+          "description": "Zero-based sequential index of the scene in the timeline."
+        },
+        "title": {
+          "type": "string",
+          "description": "Scene heading/title."
+        },
+        "narrationAr": {
+          "type": "string",
+          "description": "Arabic voiceover narration and subtitle script for this scene."
+        },
+        "visualPrompt": {
+          "type": "string",
+          "description": "Detailed photorealistic prompt used to synthesize and light the scene frame."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Duration of this scene in seconds (3 to 60s)."
+        },
+        "cameraMovement": {
+          "type": "string",
+          "enum": ["STATIC", "PAN_LEFT", "PAN_RIGHT", "ZOOM_IN", "ZOOM_OUT", "DOLLY_FORWARD", "ORBIT_3D"],
+          "description": "Cinematic camera movement applied during video rendering."
+        },
+        "transitionType": {
+          "type": "string",
+          "enum": ["CROSSFADE", "CUT", "DIP_TO_BLACK", "LIGHT_FLASH", "SLIDE_RTL"],
+          "description": "Transition effect to the next scene."
+        },
+        "lightingKeyIntensity": {
+          "type": "integer",
+          "description": "Key light intensity percentage (0-100)."
+        },
+        "lightingFillIntensity": {
+          "type": "integer",
+          "description": "Fill light intensity percentage (0-100)."
+        },
+        "lightingRimIntensity": {
+          "type": "integer",
+          "description": "Rim/Back light intensity percentage (0-100)."
+        },
+        "colorTempKelvin": {
+          "type": "integer",
+          "description": "Color temperature in Kelvin (2000K to 10000K)."
+        },
+        "lightAngleDeg": {
+          "type": "integer",
+          "description": "Directional key light azimuth angle in degrees (0-360)."
+        },
+        "lightElevationDeg": {
+          "type": "integer",
+          "description": "Key light elevation angle in degrees (0-90)."
+        },
+        "atmosphereFog": {
+          "type": "integer",
+          "description": "Volumetric fog / bloom intensity percentage (0-100)."
+        },
+        "colorGradePreset": {
+          "type": "string",
+          "description": "Color grading LUT preset identifier."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "projectId",
+        "sceneIndex",
+        "title",
+        "narrationAr",
+        "visualPrompt",
+        "durationSeconds",
+        "cameraMovement",
+        "transitionType",
+        "lightingKeyIntensity",
+        "lightingFillIntensity",
+        "lightingRimIntensity",
+        "colorTempKelvin",
+        "lightAngleDeg",
+        "lightElevationDeg",
+        "atmosphereFog",
+        "colorGradePreset",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "GeneratedVideo": {
+      "title": "GeneratedVideo",
+      "description": "A compiled and exported MP4 video record saved by an authenticated user for the Projects Gallery.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the authenticated owner."
+        },
+        "projectId": {
+          "type": "string",
+          "description": "ID of the source VideoProject."
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title of the exported video."
+        },
+        "genre": {
+          "type": "string",
+          "description": "Cinematic genre label."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": ["16:9", "9:16", "21:9", "1:1"],
+          "description": "Aspect ratio of the exported video."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Total duration in seconds."
+        },
+        "sceneCount": {
+          "type": "integer",
+          "description": "Number of compiled scene segments."
+        },
+        "colorGradePreset": {
+          "type": "string",
+          "description": "Primary color grading preset used."
+        },
+        "thumbnailBase64": {
+          "type": "string",
+          "description": "Compact Base64 JPEG thumbnail preview for gallery display."
+        },
+        "localFilePath": {
+          "type": "string",
+          "description": "Device file path of the exported MP4 video."
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "Optional backend or cloud streaming URL for the generated MP4 video."
+        },
+        "mediaMimeType": {
+          "type": "string",
+          "description": "MIME type of the generated media (e.g. video/mp4)."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of export creation via FieldValue.serverTimestamp()."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update via FieldValue.serverTimestamp()."
+        }
+      },
+      "required": [
+        "userId",
+        "projectId",
+        "title",
+        "genre",
+        "aspectRatio",
+        "durationSeconds",
+        "sceneCount",
+        "colorGradePreset",
+        "thumbnailBase64",
+        "localFilePath",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/projects/{projectId}": {
+      "schema": { "$ref": "#/entities/VideoProject" },
+      "description": "User-scoped long-form AI video production projects."
+    },
+    "/users/{userId}/projects/{projectId}/scenes/{sceneId}": {
+      "schema": { "$ref": "#/entities/VideoScene" },
+      "description": "Ordered timeline scenes belonging to a specific video project."
+    },
+    "/users/{userId}/generated_videos/{videoId}": {
+      "schema": { "$ref": "#/entities/GeneratedVideo" },
+      "description": "Exported final MP4 video entries with thumbnails and timestamps for Projects Gallery."
+    }
+  }
+}

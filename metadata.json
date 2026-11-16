@@ -1,0 +1,6 @@
+{
+  "name": "CinemaRoya Studio",
+  "description": "استوديو احترافي بالذكاء الاصطناعي لتوليد ومونتاج الفيديوهات الطويلة الواقعية من النصوص والصور مع دعم كامل للغة العربية والتحكم المتقدم بالمشاهد والإضاءة السينمائية.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
