@@ -54,6 +54,7 @@ import com.cinemaroya.studio.ui.theme.MyApplicationTheme
 import com.cinemaroya.studio.ui.theme.StudioCard
 import com.cinemaroya.studio.ui.theme.StudioElevated
 import com.cinemaroya.studio.ui.theme.StudioObsidian
+import com.cinemaroya.studio.data.ai.AiEngineSettings
 import com.cinemaroya.studio.util.CrashReportDialog
 import com.cinemaroya.studio.util.CrashReporter
 import com.cinemaroya.studio.util.configureAppCheck
@@ -68,6 +69,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         CrashReporter.install(this)
+        AiEngineSettings.init(this)
         val pendingCrashReport = CrashReporter.readPending(this)
 
         // STEP 1: Configure App Check with launch intent before any UI, ViewModel, or Firebase operations

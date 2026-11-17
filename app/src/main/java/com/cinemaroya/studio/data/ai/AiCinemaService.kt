@@ -24,6 +24,18 @@ import kotlin.math.roundToInt
 
 private const val TAG = "AiCinemaService"
 
+private const val STORYBOARD_JSON_SHAPE = """
+أعد كائن JSON صالحاً فقط، بدون أي نص قبله أو بعده، بهذا الشكل بالضبط:
+{"title":"عنوان قصير","synopsis":"ملخص جملة أو جملتين","globalLightingPreset":"CINEMATIC_GOLD|TEAL_ORANGE|NOIR_CONTRAST|DESERT_WARM|CYBER_NEON|NATURAL_8K","scenes":[{"title":"عنوان المشهد","narrationAr":"سرد عربي","visualPrompt":"English 8K photorealistic prompt","durationSeconds":10,"cameraMovement":"STATIC|PAN_LEFT|PAN_RIGHT|ZOOM_IN|ZOOM_OUT|DOLLY_FORWARD|ORBIT_3D","cameraShotAngle":"EYE_LEVEL|LOW_ANGLE|HIGH_ANGLE|AERIAL_DRONE|DUTCH_ANGLE|CLOSE_UP_MACRO","colorGradePreset":"CINEMATIC_GOLD|TEAL_ORANGE|NOIR_CONTRAST|DESERT_WARM|CYBER_NEON|NATURAL_8K"}]}
+اختر قيمة واحدة فقط من كل قائمة مفصولة بـ |.
+"""
+
+private const val SCENE_JSON_SHAPE = """
+أعد كائن JSON صالحاً فقط، بدون أي نص آخر، بهذا الشكل:
+{"title":"","narrationAr":"","visualPrompt":"","cameraShotAngle":"EYE_LEVEL|LOW_ANGLE|HIGH_ANGLE|AERIAL_DRONE|DUTCH_ANGLE|CLOSE_UP_MACRO","cameraPitchDeg":0,"lensFocalMm":35,"lightingKeyIntensity":70,"lightingFillIntensity":40,"lightingRimIntensity":50,"colorTempKelvin":5600,"atmosphereFog":20,"colorGradePreset":"CINEMATIC_GOLD|TEAL_ORANGE|NOIR_CONTRAST|DESERT_WARM|CYBER_NEON|NATURAL_8K"}
+اختر قيمة واحدة فقط من كل قائمة مفصولة بـ |.
+"""
+
 data class GeneratedStoryboard(
     val title: String,
     val synopsis: String,
@@ -163,23 +175,36 @@ class AiCinemaService {
             }
         }
 
-        val jsonText = try {
-            onStatusUpdate?.invoke("جاري بناء السيناريو والمشاهد عبر Gemini 3.8 Flash...")
-            withTimeout(90_000L) {
-                collectStreamText(storyboardModel, requestContent) { charsCount ->
-                    onStatusUpdate?.invoke("جاري صياغة المشاهد السينمائية مباشرة ($charsCount حرف)...")
+        val geminiRun: suspend () -> String = {
+            try {
+                withTimeout(45_000L) {
+                    collectStreamText(storyboardModel, requestContent) { charsCount ->
+                        onStatusUpdate?.invoke("جاري صياغة المشاهد السينمائية عبر Gemini ($charsCount حرف)...")
+                    }
                 }
-            }
-        } catch (e: TimeoutCancellationException) {
-            currentCoroutineContext().ensureActive()
-            Log.w(TAG, "Primary gemini-3.8-flash storyboard timed out, falling back to gemini-3.5-flash-lite", e)
-            onStatusUpdate?.invoke("تم تحويل الطلب لنموذج Gemini 3.5 Flash-Lite فائق السرعة...")
-            withTimeout(90_000L) {
-                collectStreamText(fastStoryboardModel, requestContent) { charsCount ->
-                    onStatusUpdate?.invoke("جاري استكمال المشاهد بسرعة عالية ($charsCount حرف)...")
+            } catch (e: Exception) {
+                if (e is kotlinx.coroutines.CancellationException && e !is TimeoutCancellationException) throw e
+                currentCoroutineContext().ensureActive()
+                Log.w(TAG, "Primary Gemini storyboard failed, trying gemini-3.5-flash-lite", e)
+                onStatusUpdate?.invoke("تم تحويل الطلب لنموذج Gemini 3.5 Flash-Lite السريع...")
+                withTimeout(45_000L) {
+                    collectStreamText(fastStoryboardModel, requestContent) { charsCount ->
+                        onStatusUpdate?.invoke("جاري استكمال المشاهد بسرعة عالية ($charsCount حرف)...")
+                    }
                 }
             }
         }
+        val externalPrompt = "$systemInstruction\n\n$STORYBOARD_JSON_SHAPE\n\nفكرة الفيديو:\n$ideaPrompt"
+        val jsonText = runWithEngines(
+            onStatus = onStatusUpdate,
+            external = { engine ->
+                if (scaledBitmap != null) {
+                    onStatusUpdate?.invoke("${engine.label} يتجاهل الصورة المرجعية ويعتمد على النص فقط...")
+                }
+                ExternalAiClient.extractJsonObject(ExternalAiClient.chat(engine, externalPrompt, jsonMode = true))
+            },
+            gemini = geminiRun
+        )
 
         if (jsonText.isBlank()) {
             throw IllegalStateException("لم يرجع النموذج استجابة نصية.")
@@ -204,9 +229,19 @@ class AiCinemaService {
             "$directorInstructionAr"
         """.trimIndent()
 
-        val jsonText = collectStreamText(
-            model = sceneEnhanceModel,
-            inputContent = content { text(prompt) }
+        val jsonText = runWithEngines(
+            onStatus = null,
+            external = { engine ->
+                ExternalAiClient.extractJsonObject(
+                    ExternalAiClient.chat(engine, "$prompt\n\n$SCENE_JSON_SHAPE", jsonMode = true)
+                )
+            },
+            gemini = {
+                collectStreamText(
+                    model = sceneEnhanceModel,
+                    inputContent = content { text(prompt) }
+                )
+            }
         )
         if (jsonText.isBlank()) {
             throw IllegalStateException("تعذر تحديث المشهد بالذكاء الاصطناعي.")
@@ -250,9 +285,15 @@ class AiCinemaService {
             2. موجه التوليد الفيزيائي الدقيق (Master Video Prompt) جاهز للنسخ والاستخدام.
         """.trimIndent()
 
-        val resultText = collectStreamText(
-            model = textSequenceModel,
-            inputContent = content { text(prompt) }
+        val resultText = runWithEngines(
+            onStatus = null,
+            external = { engine -> ExternalAiClient.chat(engine, prompt, jsonMode = false) },
+            gemini = {
+                collectStreamText(
+                    model = textSequenceModel,
+                    inputContent = content { text(prompt) }
+                )
+            }
         )
         if (resultText.isBlank()) {
             throw IllegalStateException("لم يرجع النموذج تسلسل الموجهات.")
@@ -296,6 +337,46 @@ class AiCinemaService {
             ?.firstOrNull()
 
         return imagePart?.image
+    }
+
+    /**
+     * Runs the request on the selected engine first; if it fails (quota, network, empty reply) and
+     * auto-fallback is on, tries the other engines that are available.
+     */
+    private suspend fun runWithEngines(
+        onStatus: ((String) -> Unit)?,
+        external: suspend (AiEngine) -> String,
+        gemini: suspend () -> String
+    ): String {
+        val selected = AiEngineSettings.engine
+        val order = buildList {
+            add(selected)
+            if (AiEngineSettings.autoFallback) {
+                AiEngine.entries.filterTo(this) { it != selected }
+            }
+        }.filter { AiEngineSettings.isAvailable(it) }
+        if (order.isEmpty()) {
+            throw IllegalStateException("أدخل مفتاح ${selected.label} من إعدادات المحركات أو اختر Gemini.")
+        }
+
+        val errors = mutableListOf<String>()
+        for (engine in order) {
+            try {
+                onStatus?.invoke("جاري التوليد عبر ${engine.label}...")
+                val text = if (engine.isExternal) external(engine) else gemini()
+                if (text.isNotBlank()) return text
+                errors += "${engine.label}: ردّ فارغ"
+            } catch (e: TimeoutCancellationException) {
+                currentCoroutineContext().ensureActive()
+                errors += "${engine.label}: انتهت المهلة"
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Engine ${engine.code} failed", e)
+                errors += "${engine.label}: ${(e.message ?: e.javaClass.simpleName).take(160)}"
+            }
+        }
+        throw IllegalStateException(errors.joinToString("\n"))
     }
 
     private suspend fun collectStreamText(

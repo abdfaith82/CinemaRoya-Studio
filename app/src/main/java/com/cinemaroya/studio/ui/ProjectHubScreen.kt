@@ -84,6 +84,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.cinemaroya.studio.R
 import com.cinemaroya.studio.model.VideoProject
+import com.cinemaroya.studio.ui.components.AiEngineSettingsDialog
 import com.cinemaroya.studio.ui.components.AppCheckDiagnosticsDialog
 import com.cinemaroya.studio.ui.theme.CinemaGold
 import com.cinemaroya.studio.ui.theme.StudioCard
@@ -149,6 +150,7 @@ fun ProjectHubScreen(
 ) {
     val context = LocalContext.current
     var showAppCheckDialog by rememberSaveable { mutableStateOf(false) }
+    var showEngineDialog by rememberSaveable { mutableStateOf(false) }
     var promptText by rememberSaveable {
         mutableStateOf("فيلم وثائقي سينمائي طويل يستكشف الجبال الصخرية والواجهات المنحوتة في العلا عند الغروب وتحت سماء الصحراء المرصعة بالنجوم، مع إضاءة ذهبية درامية.")
     }
@@ -231,6 +233,20 @@ fun ProjectHubScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        IconButton(
+                            onClick = { showEngineDialog = true },
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(StudioCard)
+                                .testTag("open_ai_engines_btn")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AutoAwesome,
+                                contentDescription = "محركات الذكاء الاصطناعي",
+                                tint = CinemaGold
+                            )
+                        }
+
                         IconButton(
                             onClick = {
                                 onClearAppCheckTestState()
@@ -821,6 +837,10 @@ fun ProjectHubScreen(
                     }
                 }
             }
+        }
+
+        if (showEngineDialog) {
+            AiEngineSettingsDialog(onDismiss = { showEngineDialog = false })
         }
 
         if (showAppCheckDialog) {
