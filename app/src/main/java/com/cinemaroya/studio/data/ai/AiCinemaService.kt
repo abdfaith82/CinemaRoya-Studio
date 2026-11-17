@@ -2,6 +2,7 @@ package com.cinemaroya.studio.data.ai
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.cinemaroya.studio.background.BackgroundWork
 import com.cinemaroya.studio.model.CameraShotAnglePreset
 import com.cinemaroya.studio.model.ColorGradePreset
 import com.cinemaroya.studio.model.VideoProject
@@ -344,6 +345,14 @@ class AiCinemaService {
      * auto-fallback is on, tries the other engines that are available.
      */
     private suspend fun runWithEngines(
+        onStatus: ((String) -> Unit)?,
+        external: suspend (AiEngine) -> String,
+        gemini: suspend () -> String
+    ): String = BackgroundWork.keepAlive("توليد المشاهد بالذكاء الاصطناعي") {
+        runWithEnginesInner(onStatus, external, gemini)
+    }
+
+    private suspend fun runWithEnginesInner(
         onStatus: ((String) -> Unit)?,
         external: suspend (AiEngine) -> String,
         gemini: suspend () -> String

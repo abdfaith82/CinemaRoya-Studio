@@ -3,4 +3,7 @@
     <cache-path
         name="exported_videos"
         path="exported_videos/" />
+    <files-path
+        name="clips"
+        path="clips/" />
 </paths>

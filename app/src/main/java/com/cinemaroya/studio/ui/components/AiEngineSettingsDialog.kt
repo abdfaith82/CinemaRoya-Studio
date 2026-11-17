@@ -11,7 +11,13 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.ui.platform.LocalContext
+import com.cinemaroya.studio.data.video.KeyImporter
+import com.cinemaroya.studio.data.video.VideoEngineStore
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
@@ -33,6 +39,8 @@ import com.cinemaroya.studio.data.ai.AiEngineSettings
 
 @Composable
 fun AiEngineSettingsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    var pasteInfo by remember { mutableStateOf("") }
     var engine by remember { mutableStateOf(AiEngineSettings.engine) }
     var autoFallback by remember { mutableStateOf(AiEngineSettings.autoFallback) }
     val keys = remember {
@@ -60,6 +68,22 @@ fun AiEngineSettingsDialog(onDismiss: () -> Unit) {
                     text = "اختر المحرك الأساسي لكتابة السيناريو والمشاهد. المفاتيح مجانية ومحفوظة على جهازك فقط.",
                     style = MaterialTheme.typography.bodySmall
                 )
+                Button(onClick = {
+                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val text = cm.primaryClip?.takeIf { it.itemCount > 0 }
+                        ?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
+                    val found = KeyImporter.importFrom(text)
+                    found.forEach { (kind, key) ->
+                        when (kind) {
+                            "groq" -> keys[AiEngine.GROQ] = key
+                            "openrouter" -> keys[AiEngine.OPENROUTER] = key
+                            "hf" -> VideoEngineStore.saveToken(key)
+                        }
+                    }
+                    pasteInfo = if (found.isEmpty()) "لم أجد مفاتيح معروفة في الحافظة"
+                    else "تم التعرف على ${found.size} مفتاح، اضغط حفظ"
+                }) { Text("لصق كل المفاتيح من الحافظة") }
+                if (pasteInfo.isNotBlank()) Text(pasteInfo, style = MaterialTheme.typography.labelSmall)
                 AiEngine.entries.forEach { item ->
                     Row(
                         modifier = Modifier

@@ -54,7 +54,14 @@ import com.cinemaroya.studio.ui.theme.MyApplicationTheme
 import com.cinemaroya.studio.ui.theme.StudioCard
 import com.cinemaroya.studio.ui.theme.StudioElevated
 import com.cinemaroya.studio.ui.theme.StudioObsidian
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import com.cinemaroya.studio.background.BackgroundWork
 import com.cinemaroya.studio.data.ai.AiEngineSettings
+import com.cinemaroya.studio.data.video.VideoClipManager
+import com.cinemaroya.studio.data.video.VideoEngineStore
 import com.cinemaroya.studio.util.CrashReportDialog
 import com.cinemaroya.studio.util.CrashReporter
 import com.cinemaroya.studio.util.configureAppCheck
@@ -70,6 +77,15 @@ class MainActivity : ComponentActivity() {
 
         CrashReporter.install(this)
         AiEngineSettings.init(this)
+        BackgroundWork.init(this)
+        VideoEngineStore.init(this)
+        VideoClipManager.init(this)
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+                .launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         val pendingCrashReport = CrashReporter.readPending(this)
 
         // STEP 1: Configure App Check with launch intent before any UI, ViewModel, or Firebase operations

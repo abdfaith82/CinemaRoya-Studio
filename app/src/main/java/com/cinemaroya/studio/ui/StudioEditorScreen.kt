@@ -148,6 +148,7 @@ import com.cinemaroya.studio.util.AppCheckDiagnostics
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
+import com.cinemaroya.studio.ui.components.SceneClipSection
 import java.util.Locale
 import kotlin.math.roundToLong
 
@@ -1617,6 +1618,8 @@ private fun AiSceneSynthesisTab(
             }
         }
     }
+
+    SceneClipSection(sceneId = scene.id, prompt = localPrompt)
 }
 
 @Composable
