@@ -19,6 +19,11 @@ import com.cinemaroya.studio.model.VideoScene
 import com.cinemaroya.studio.util.AppCheckDiagnostics
 import com.cinemaroya.studio.util.AppCheckTokenVerification
 import com.cinemaroya.studio.util.Mp4VideoExporter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.cinemaroya.studio.background.BackgroundWork
+import com.cinemaroya.studio.util.FreeImageClient
+import com.cinemaroya.studio.util.NarrationAudio
 import com.cinemaroya.studio.util.getAppCheckDiagnostics
 import com.cinemaroya.studio.util.updateUserAppCheckSettings
 import com.cinemaroya.studio.util.verifyAppCheckToken
@@ -975,7 +980,7 @@ class CineRoyaViewModel(
             return
         }
 
-        viewModelScope.launch {
+        viewModelScope.launch { BackgroundWork.keepAlive("تصدير الفيديو") {
             _exportState.value = ExportMp4State.Exporting(
                 progress = 0.06f,
                 stageMessageAr = "تهيئة المشاهد ومصفوفة الإضاءة 3D..."
@@ -986,11 +991,35 @@ class CineRoyaViewModel(
                 stageMessageAr = "دمج وتصيير المقاطع السينمائية (${scenes.size} مشاهد)..."
             )
 
+            // Free image engine fills any scene that has no generated frame yet.
+            val (imgW, imgH) = when (project.aspectRatio) {
+                "9:16" -> 576 to 1024
+                "1:1" -> 768 to 768
+                "21:9" -> 1024 to 440
+                else -> 1024 to 576
+            }
+            for ((i, s) in scenes.withIndex()) {
+                if (_sceneBitmaps.value[s.id] == null) {
+                    _exportState.value = ExportMp4State.Exporting(
+                        progress = 0.06f + 0.08f * (i / scenes.size.toFloat()),
+                        stageMessageAr = "توليد صورة المشهد ${i + 1} من ${scenes.size}..."
+                    )
+                    FreeImageClient.fetch("${s.visualPrompt}, cinematic photorealistic 8k film still", imgW, imgH)
+                        ?.let { _sceneBitmaps.value = _sceneBitmaps.value + (s.id to it) }
+                }
+            }
+            _exportState.value = ExportMp4State.Exporting(
+                progress = 0.14f,
+                stageMessageAr = "توليد التعليق الصوتي بالصوت العربي..."
+            )
+            val narration = runCatching { NarrationAudio.build(context.applicationContext, scenes) }.getOrNull()
+
             val result = Mp4VideoExporter.exportProjectToMp4(
                 context = context.applicationContext,
                 project = project,
                 scenes = scenes,
                 sceneBitmaps = _sceneBitmaps.value,
+                sceneSeconds = narration?.sceneSeconds,
                 onProgress = { p ->
                     val scaled = 0.15f + (p * 0.75f)
                     _exportState.value = ExportMp4State.Exporting(
@@ -999,7 +1028,21 @@ class CineRoyaViewModel(
                     )
                 }
             )
-            result.fold(
+            val finalResult = result.map { videoFile ->
+                if (narration == null) {
+                    videoFile
+                } else {
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            val merged = File(videoFile.parentFile, "cineroya_av_${System.currentTimeMillis()}.mp4")
+                            NarrationAudio.mux(videoFile, narration.audioFile, merged)
+                            videoFile.delete()
+                            merged
+                        }.getOrDefault(videoFile)
+                    }
+                }
+            }
+            finalResult.fold(
                 onSuccess = { file ->
                     _exportState.value = ExportMp4State.Exporting(
                         progress = 0.94f,
@@ -1051,7 +1094,7 @@ class CineRoyaViewModel(
                     _exportState.value = ExportMp4State.Error(err.localizedMessage ?: "فشل تصدير ملف الفيديو MP4")
                 }
             )
-        }
+        } }
     }
 
     private fun applyCameraExtras(scene: VideoScene): VideoScene {

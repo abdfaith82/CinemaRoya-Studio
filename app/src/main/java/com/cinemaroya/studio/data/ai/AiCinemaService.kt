@@ -3,6 +3,7 @@ package com.cinemaroya.studio.data.ai
 import android.graphics.Bitmap
 import android.util.Log
 import com.cinemaroya.studio.background.BackgroundWork
+import com.cinemaroya.studio.util.FreeImageClient
 import com.cinemaroya.studio.model.CameraShotAnglePreset
 import com.cinemaroya.studio.model.ColorGradePreset
 import com.cinemaroya.studio.model.VideoProject
@@ -321,23 +322,34 @@ class AiCinemaService {
             append("Color grading preset: ${scene.colorGradePreset}. No text or watermarks.")
         }
 
-        val scaledBitmap = referenceBitmap?.let { downscaleBitmap(it, maxDimensionPx = 768) }
-        val response = if (scaledBitmap != null) {
-            imageGenModel.generateContent(
-                content {
-                    image(scaledBitmap)
-                    text("Transform and relight this reference image into a photorealistic cinematic frame matching: $lightingSpec")
-                }
-            )
-        } else {
-            imageGenModel.generateContent(lightingSpec)
+        val geminiImage: Bitmap? = try {
+            val scaledBitmap = referenceBitmap?.let { downscaleBitmap(it, maxDimensionPx = 768) }
+            val response = if (scaledBitmap != null) {
+                imageGenModel.generateContent(
+                    content {
+                        image(scaledBitmap)
+                        text("Transform and relight this reference image into a photorealistic cinematic frame matching: $lightingSpec")
+                    }
+                )
+            } else {
+                imageGenModel.generateContent(lightingSpec)
+            }
+
+            val imagePart = response.candidates.firstOrNull()
+                ?.content?.parts?.filterIsInstance<ImagePart>()
+                ?.firstOrNull()
+
+            imagePart?.image
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Gemini image failed, using free image engine", e)
+            null
         }
-
-        val imagePart = response.candidates.firstOrNull()
-            ?.content?.parts?.filterIsInstance<ImagePart>()
-            ?.firstOrNull()
-
-        return imagePart?.image
+        return geminiImage ?: FreeImageClient.fetch(
+            "${scene.visualPrompt}, ${shotAngle.promptTag}, cinematic photorealistic 8k film still, no text",
+            1024, 576
+        )
     }
 
     /**

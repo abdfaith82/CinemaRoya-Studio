@@ -43,6 +43,7 @@ object Mp4VideoExporter {
         project: VideoProject,
         scenes: List<VideoScene>,
         sceneBitmaps: Map<String, Bitmap>,
+        sceneSeconds: List<Int>? = null,
         onProgress: (Float) -> Unit
     ): Result<File> = withContext(Dispatchers.Default) {
         if (scenes.isEmpty()) {
@@ -84,8 +85,9 @@ object Mp4VideoExporter {
             val bufferInfo = MediaCodec.BufferInfo()
 
             // Cap per-scene rendered preview duration to keep export responsive on mobile
-            val sceneFrameCounts = scenes.map { scene ->
-                val cappedSec = scene.durationSeconds.coerceIn(3L, 8L).toInt()
+            val sceneFrameCounts = scenes.mapIndexed { i, scene ->
+                val cappedSec = sceneSeconds?.getOrNull(i)
+                    ?: scene.durationSeconds.coerceIn(3L, 8L).toInt()
                 cappedSec * FRAME_RATE
             }
             val totalFrames = sceneFrameCounts.sum().coerceAtLeast(1)
