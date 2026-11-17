@@ -14,6 +14,7 @@ import android.graphics.Typeface
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
+import android.media.MediaMetadataRetriever
 import android.media.MediaMuxer
 import android.text.Layout
 import android.text.StaticLayout
@@ -34,9 +35,9 @@ import kotlin.math.sin
 object Mp4VideoExporter {
 
     private const val MIME_TYPE = "video/avc"
-    private const val FRAME_RATE = 15
+    private const val FRAME_RATE = 24
     private const val I_FRAME_INTERVAL = 1
-    private const val BIT_RATE = 4_000_000
+    private const val BIT_RATE = 6_000_000
 
     suspend fun exportProjectToMp4(
         context: Context,
@@ -44,6 +45,7 @@ object Mp4VideoExporter {
         scenes: List<VideoScene>,
         sceneBitmaps: Map<String, Bitmap>,
         sceneSeconds: List<Int>? = null,
+        sceneClips: Map<String, String> = emptyMap(),
         onProgress: (Float) -> Unit
     ): Result<File> = withContext(Dispatchers.Default) {
         if (scenes.isEmpty()) {
@@ -97,10 +99,29 @@ object Mp4VideoExporter {
             for ((sceneIdx, scene) in scenes.withIndex()) {
                 val framesInScene = sceneFrameCounts[sceneIdx]
                 val sceneBitmap = sceneBitmaps[scene.id]
+                val clipRetriever = sceneClips[scene.id]?.let { path ->
+                    runCatching { MediaMetadataRetriever().apply { setDataSource(path) } }.getOrNull()
+                }
+                val clipDurationUs = (clipRetriever
+                    ?.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+                    ?.toLongOrNull() ?: 0L) * 1000L
 
                 for (f in 0 until framesInScene) {
                     coroutineContext.ensureActive()
                     val progressInScene = f.toFloat() / framesInScene.coerceAtLeast(1).toFloat()
+
+                    // Real generated clip: ping-pong through it so short clips fill the whole scene.
+                    val clipFrame: Bitmap? = if (clipRetriever != null && clipDurationUs > 0L) {
+                        val period = clipDurationUs * 2
+                        var t = (f.toLong() * 1_000_000L / FRAME_RATE) % period
+                        if (t > clipDurationUs) t = period - t
+                        runCatching {
+                            clipRetriever.getFrameAtTime(
+                                t.coerceIn(0L, clipDurationUs - 1L),
+                                MediaMetadataRetriever.OPTION_CLOSEST
+                            )
+                        }.getOrNull()
+                    } else null
 
                     val surfaceCanvas = inputSurface.lockCanvas(null)
                     try {
@@ -111,11 +132,12 @@ object Mp4VideoExporter {
                             scene = scene,
                             sceneNumber = sceneIdx + 1,
                             totalScenes = scenes.size,
-                            sourceBitmap = sceneBitmap,
+                            sourceBitmap = clipFrame ?: sceneBitmap,
                             progress = progressInScene
                         )
                     } finally {
                         inputSurface.unlockCanvasAndPost(surfaceCanvas)
+                        clipFrame?.recycle()
                     }
 
                     drainEncoder(encoder, muxer, bufferInfo, endOfStream = false, ptsFrameCounter = ptsTracker, onTrackAdded = { idx ->
@@ -126,6 +148,7 @@ object Mp4VideoExporter {
                     renderedFrames++
                     onProgress((renderedFrames.toFloat() / totalFrames.toFloat()).coerceIn(0f, 0.99f))
                 }
+                runCatching { clipRetriever?.release() }
             }
 
             drainEncoder(encoder, muxer, bufferInfo, endOfStream = true, ptsFrameCounter = ptsTracker, onTrackAdded = { idx ->

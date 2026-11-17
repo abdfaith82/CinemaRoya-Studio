@@ -15,6 +15,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -97,6 +98,7 @@ fun VideoEngineDialog(onDismiss: () -> Unit) {
     var api by remember { mutableStateOf(initial.apiName) }
     var token by remember { mutableStateOf(initial.hfToken) }
     var template by remember { mutableStateOf(initial.dataTemplate) }
+    var useInExport by remember { mutableStateOf(VideoEngineStore.useInExport) }
     var info by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var candidates by remember { mutableStateOf<List<SpaceCandidate>>(emptyList()) }
@@ -181,6 +183,18 @@ fun VideoEngineDialog(onDismiss: () -> Unit) {
                         }
                     ) { Text("بحث عن Spaces") }
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        "استعمال مقاطع الفيديو الحقيقية عند تصدير الفيلم (أبطأ)",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Switch(checked = useInExport, onCheckedChange = { useInExport = it })
+                }
                 if (info.isNotBlank()) Text(info, style = MaterialTheme.typography.labelSmall)
                 candidates.forEach { c ->
                     TextButton(onClick = {
@@ -194,6 +208,7 @@ fun VideoEngineDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = {
+                VideoEngineStore.useInExport = useInExport
                 VideoEngineStore.save(
                     VideoEngineStore.load().copy(
                         spaceUrl = SpaceInspector.normalizeUrl(url).ifBlank { url },

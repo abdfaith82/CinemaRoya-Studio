@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -93,7 +96,23 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            val baseDensity = LocalDensity.current
+            val widthDp = LocalConfiguration.current.screenWidthDp
+            // Normalise phone UI size: very large "display size" settings (narrow dp width) and
+            // very small ones (wide dp width) are rescaled to a comfortable 360-412dp layout width.
+            val targetDp = when {
+                widthDp in 1..359 -> 360f
+                widthDp in 441..599 -> 412f
+                else -> widthDp.toFloat()
+            }
+            val fixedDensity = Density(
+                density = if (widthDp > 0) baseDensity.density * widthDp / targetDp else baseDensity.density,
+                fontScale = baseDensity.fontScale.coerceIn(0.85f, 1.1f)
+            )
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+                LocalDensity provides fixedDensity
+            ) {
                 MyApplicationTheme {
                     var crashReport by remember { mutableStateOf(pendingCrashReport) }
                     CineRoyaAppNavigation()

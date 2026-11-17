@@ -18,6 +18,8 @@ import com.cinemaroya.studio.model.VideoProject
 import com.cinemaroya.studio.model.VideoScene
 import com.cinemaroya.studio.util.AppCheckDiagnostics
 import com.cinemaroya.studio.util.AppCheckTokenVerification
+import com.cinemaroya.studio.data.video.VideoClipManager
+import com.cinemaroya.studio.data.video.VideoEngineStore
 import com.cinemaroya.studio.util.Mp4VideoExporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -991,6 +993,26 @@ class CineRoyaViewModel(
                 stageMessageAr = "دمج وتصيير المقاطع السينمائية (${scenes.size} مشاهد)..."
             )
 
+            // Real video clips from the free video engine (falls back to images if the engine is unavailable).
+            val clipPaths = mutableMapOf<String, String>()
+            if (VideoEngineStore.useInExport) {
+                var engineDown = false
+                for ((i, s) in scenes.withIndex()) {
+                    val existing = VideoClipManager.existingClip(s.id)
+                    if (existing != null) {
+                        clipPaths[s.id] = existing
+                        continue
+                    }
+                    if (engineDown) continue
+                    _exportState.value = ExportMp4State.Exporting(
+                        progress = 0.06f + 0.06f * (i / scenes.size.toFloat()),
+                        stageMessageAr = "توليد مقطع فيديو واقعي للمشهد ${i + 1} من ${scenes.size}… قد يستغرق دقائق"
+                    )
+                    val path = VideoClipManager.ensureClip(s.id, "${s.visualPrompt}, cinematic photorealistic")
+                    if (path != null) clipPaths[s.id] = path else engineDown = true
+                }
+            }
+
             // Free image engine fills any scene that has no generated frame yet.
             val (imgW, imgH) = when (project.aspectRatio) {
                 "9:16" -> 576 to 1024
@@ -999,9 +1021,9 @@ class CineRoyaViewModel(
                 else -> 1024 to 576
             }
             for ((i, s) in scenes.withIndex()) {
-                if (_sceneBitmaps.value[s.id] == null) {
+                if (_sceneBitmaps.value[s.id] == null && s.id !in clipPaths) {
                     _exportState.value = ExportMp4State.Exporting(
-                        progress = 0.06f + 0.08f * (i / scenes.size.toFloat()),
+                        progress = 0.12f + 0.04f * (i / scenes.size.toFloat()),
                         stageMessageAr = "توليد صورة المشهد ${i + 1} من ${scenes.size}..."
                     )
                     FreeImageClient.fetch("${s.visualPrompt}, cinematic photorealistic 8k film still", imgW, imgH)
@@ -1020,6 +1042,7 @@ class CineRoyaViewModel(
                 scenes = scenes,
                 sceneBitmaps = _sceneBitmaps.value,
                 sceneSeconds = narration?.sceneSeconds,
+                sceneClips = clipPaths,
                 onProgress = { p ->
                     val scaled = 0.15f + (p * 0.75f)
                     _exportState.value = ExportMp4State.Exporting(
