@@ -89,9 +89,12 @@ jobs:
       - name: Build Debug APK
         run: gradle assembleDebug --stacktrace --no-daemon
 
+      - name: Name the APK after the app
+        run: cp app/build/outputs/apk/debug/app-debug.apk CinemaRoya-Studio.apk
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: CinemaRoya-Studio
+          path: CinemaRoya-Studio.apk
           if-no-files-found: error

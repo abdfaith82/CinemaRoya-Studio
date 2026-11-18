@@ -370,30 +370,41 @@ class AiCinemaService {
         gemini: suspend () -> String
     ): String {
         val selected = AiEngineSettings.engine
-        val order = buildList {
-            add(selected)
-            if (AiEngineSettings.autoFallback) {
-                AiEngine.entries.filterTo(this) { it != selected }
-            }
-        }.filter { AiEngineSettings.isAvailable(it) }
-        if (order.isEmpty()) {
+        val candidates = AiEngine.entries.filter {
+            AiEngineSettings.isAvailable(it) && (it == selected || AiEngineSettings.autoFallback)
+        }
+        if (candidates.isEmpty()) {
             throw IllegalStateException("أدخل مفتاح ${selected.label} من إعدادات المحركات أو اختر Gemini.")
+        }
+        val order = EngineRouter.order(candidates, selected, AiEngineSettings.strategy)
+        if (order.isEmpty()) {
+            throw IllegalStateException(
+                candidates.joinToString("\n") { "${it.label}: ${EngineRouter.note(it).ifEmpty { "معطّل" }}" }
+            )
         }
 
         val errors = mutableListOf<String>()
         for (engine in order) {
+            val startedAt = System.currentTimeMillis()
             try {
+                EngineRouter.markStart(engine)
                 onStatus?.invoke("جاري التوليد عبر ${engine.label}...")
                 val text = if (engine.isExternal) external(engine) else gemini()
-                if (text.isNotBlank()) return text
+                if (text.isNotBlank()) {
+                    EngineRouter.onSuccess(engine, System.currentTimeMillis() - startedAt)
+                    return text
+                }
+                EngineRouter.onFailure(engine, IllegalStateException("ردّ فارغ"))
                 errors += "${engine.label}: ردّ فارغ"
             } catch (e: TimeoutCancellationException) {
                 currentCoroutineContext().ensureActive()
+                EngineRouter.onFailure(engine, IllegalStateException("انتهت المهلة"))
                 errors += "${engine.label}: انتهت المهلة"
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
                 Log.w(TAG, "Engine ${engine.code} failed", e)
+                EngineRouter.onFailure(engine, e)
                 errors += "${engine.label}: ${(e.message ?: e.javaClass.simpleName).take(160)}"
             }
         }

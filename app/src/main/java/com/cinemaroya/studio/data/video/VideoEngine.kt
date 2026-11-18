@@ -2,6 +2,7 @@ package com.cinemaroya.studio.data.video
 
 import android.content.Context
 import com.cinemaroya.studio.background.BackgroundWork
+import com.cinemaroya.studio.data.ai.SecretStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,7 +45,7 @@ object VideoEngineStore {
         spaceUrl = sp?.getString("spaceUrl", DEFAULT_URL) ?: DEFAULT_URL,
         apiName = sp?.getString("apiName", DEFAULT_API) ?: DEFAULT_API,
         dataTemplate = sp?.getString("template", DEFAULT_TEMPLATE) ?: DEFAULT_TEMPLATE,
-        hfToken = sp?.getString("token", "") ?: "",
+        hfToken = SecretStore.decrypt(sp?.getString("token", "") ?: ""),
         negativePrompt = sp?.getString("negative", DEFAULT_NEGATIVE) ?: DEFAULT_NEGATIVE
     )
 
@@ -53,7 +54,7 @@ object VideoEngineStore {
             ?.putString("spaceUrl", c.spaceUrl.trim())
             ?.putString("apiName", c.apiName.trim())
             ?.putString("template", c.dataTemplate)
-            ?.putString("token", c.hfToken.trim())
+            ?.putString("token", SecretStore.encrypt(c.hfToken.trim()))
             ?.putString("negative", c.negativePrompt)
             ?.apply()
     }
@@ -169,6 +170,8 @@ object KeyImporter {
                 t.startsWith("gsk_") -> found += "groq" to t
                 t.startsWith("sk-or-") -> found += "openrouter" to t
                 t.startsWith("hf_") -> found += "hf" to t
+                t.startsWith("csk-") -> found += "cerebras" to t
+                t.startsWith("nvapi-") -> found += "nvidia" to t
             }
         }
         return found
